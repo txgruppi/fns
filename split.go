@@ -1,6 +1,9 @@
 package fns
 
-import "strings"
+import (
+	"bytes"
+	"strings"
+)
 
 type RequestNextError struct{}
 
@@ -41,36 +44,83 @@ func Split[T any](fn func(prev []T, done bool) (rest []T, result T, err error), 
 	}
 }
 
-func SplitStringLines(gen Generator[string]) Generator[string] {
-	var builder strings.Builder
-	return Split(func(prev []string, generatorDone bool) ([]string, string, error) {
+func SeparatorSplitter[T any](
+	contains func(T) bool,
+	index func(T) int,
+	cut func(T, int) (T, T),
+	builder func(T),
+	build func() T,
+	empty func(T) bool,
+	gen Generator[T],
+) Generator[T] {
+	var zero T
+	return Split[T](func(prev []T, generatorDone bool) ([]T, T, error) {
 		lineBreak := -1
 		for i, chunk := range prev {
-			if strings.Contains(chunk, "\n") {
+			if contains(chunk) {
 				lineBreak = i
 				break
 			}
 		}
-		builder.Reset()
 		if lineBreak != -1 {
 			for i := 0; i <= lineBreak; i++ {
-				idx := strings.Index(prev[0], "\n")
+				idx := index(prev[0])
 				if idx == -1 {
-					builder.WriteString(prev[0])
+					builder(prev[0])
 					prev = prev[1:]
 					continue
 				}
-				builder.WriteString(prev[0][:idx])
-				prev[0] = prev[0][idx+1:]
+				left, right := cut(prev[0], idx)
+				builder(left)
+				prev[0] = right
 			}
-			return prev, builder.String(), nil
+			return prev, build(), nil
 		}
 		if !generatorDone {
-			return prev, "", &RequestNextError{}
+			return prev, zero, &RequestNextError{}
 		}
-		for _, chunk := range prev {
-			builder.WriteString(chunk)
+		if len(prev) == 0 {
+			return nil, zero, &GeneratorDoneError{}
 		}
-		return nil, builder.String(), &GeneratorDoneError{}
+		for len(prev) > 0 {
+			builder(prev[0])
+			prev = prev[1:]
+		}
+		result := build()
+		if empty(result) {
+			return nil, zero, &GeneratorDoneError{}
+		}
+		return nil, result, nil
 	}, gen)
+}
+
+func SplitLinesString(gen Generator[string]) Generator[string] {
+	var builder strings.Builder
+	return SeparatorSplitter[string](
+		func(v string) bool { return strings.Contains(v, "\n") },
+		func(v string) int { return strings.Index(v, "\n") },
+		func(v string, idx int) (string, string) { return v[:idx], v[idx+1:] },
+		func(v string) { builder.WriteString(v) },
+		func() string { result := builder.String(); builder.Reset(); return result },
+		func(v string) bool { return v == "" },
+		gen,
+	)
+}
+
+func SplitLinesBytes(gen Generator[[]byte]) Generator[[]byte] {
+	var buf bytes.Buffer
+	return SeparatorSplitter[[]byte](
+		func(v []byte) bool { return bytes.Contains(v, []byte("\n")) },
+		func(v []byte) int { return bytes.Index(v, []byte("\n")) },
+		func(v []byte, idx int) ([]byte, []byte) { return v[:idx], v[idx+1:] },
+		func(v []byte) { buf.Write(v) },
+		func() []byte {
+			cp := make([]byte, buf.Len())
+			copy(cp, buf.Bytes())
+			buf.Reset()
+			return cp
+		},
+		func(v []byte) bool { return len(v) == 0 },
+		gen,
+	)
 }
