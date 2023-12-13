@@ -39,7 +39,8 @@ func TestMap(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 			actual := fns.Map[int, string](c.fn, c.subject)
-			for i := 0; true; i++ {
+			i := 0
+			for ; true; i++ {
 				item, err := actual()
 				if fns.IsGeneratorDoneError(err) {
 					break
@@ -50,6 +51,9 @@ func TestMap(t *testing.T) {
 				if item != c.expected[i] {
 					t.Errorf("expected %v, got %v", c.expected[i], item)
 				}
+			}
+			if i != len(c.expected) {
+				t.Errorf("expected %v, got %v", len(c.expected), i)
 			}
 		})
 	}
