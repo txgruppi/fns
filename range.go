@@ -11,7 +11,7 @@ type RangeItem interface {
 func Range[T RangeItem](min, max, step int) Generator[T] {
 	curr := min
 	return func() (item T, err error) {
-		if curr >= max {
+		if (step > 0 && curr >= max) || (step < 0 && curr <= max) {
 			err = &GeneratorDoneError{}
 			return
 		}
