@@ -1,5 +1,7 @@
 package fns
 
+import "strings"
+
 type RequestNextError struct{}
 
 func (e *RequestNextError) Error() string {
@@ -37,4 +39,38 @@ func Split[T any](fn func(prev []T, done bool) (rest []T, result T, err error), 
 			return
 		}
 	}
+}
+
+func SplitStringLines(gen Generator[string]) Generator[string] {
+	var builder strings.Builder
+	return Split(func(prev []string, generatorDone bool) ([]string, string, error) {
+		lineBreak := -1
+		for i, chunk := range prev {
+			if strings.Contains(chunk, "\n") {
+				lineBreak = i
+				break
+			}
+		}
+		builder.Reset()
+		if lineBreak != -1 {
+			for i := 0; i <= lineBreak; i++ {
+				idx := strings.Index(prev[0], "\n")
+				if idx == -1 {
+					builder.WriteString(prev[0])
+					prev = prev[1:]
+					continue
+				}
+				builder.WriteString(prev[0][:idx])
+				prev[0] = prev[0][idx+1:]
+			}
+			return prev, builder.String(), nil
+		}
+		if !generatorDone {
+			return prev, "", &RequestNextError{}
+		}
+		for _, chunk := range prev {
+			builder.WriteString(chunk)
+		}
+		return nil, builder.String(), &GeneratorDoneError{}
+	}, gen)
 }
