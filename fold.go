@@ -4,6 +4,9 @@ func Fold[A, B any](curr B, fn func(B, A) (B, error), gen Generator[A]) Generato
 	return func() (B, error) {
 		for {
 			item, err := gen()
+			if IsGeneratorDoneError(err) {
+				return curr, nil
+			}
 			if err != nil {
 				return curr, err
 			}

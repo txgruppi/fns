@@ -50,8 +50,8 @@ func TestFold(t *testing.T) {
 			t.Parallel()
 			actual := fns.Fold[int, int](c.init, c.fn, c.subject)
 			item, err := actual()
-			if !fns.IsGeneratorDoneError(err) {
-				t.Errorf("expected generator done error, got %v", err)
+			if err != nil {
+				t.Errorf("expected nil, got %v", err)
 			}
 			if item != c.expected {
 				t.Errorf("expected %v, got %v", c.expected, item)
