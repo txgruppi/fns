@@ -34,7 +34,7 @@ func TestToSlice(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual, err := fns.ToSlice[int](c.subject)
+			actual, err := fns.ToSlice[int](c.subject)()
 			if err != nil {
 				t.Errorf("expected nil, got %v", err)
 			}
