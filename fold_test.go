@@ -51,8 +51,11 @@ func TestFoldMany(t *testing.T) {
 	if item != 10 {
 		t.Fatal("expected 10")
 	}
-	_, err = gen()
+	item, err = gen()
 	if !fns.IsGeneratorDoneError(err) {
 		t.Fatal("expected GeneratorDoneError")
+	}
+	if item != 0 {
+		t.Fatal("expected zero value")
 	}
 }
