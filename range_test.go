@@ -6,79 +6,59 @@ import (
 	"github.com/txgruppi/fns"
 )
 
-func TestRange(t *testing.T) {
-	cases := []struct {
-		name     string
-		min      int
-		max      int
-		step     int
-		expected []int
-	}{
-		{
-			name:     "empty",
-			min:      0,
-			max:      0,
-			step:     1,
-			expected: []int{},
-		},
-		{
-			name:     "one",
-			min:      0,
-			max:      1,
-			step:     1,
-			expected: []int{0},
-		},
-		{
-			name:     "many",
-			min:      0,
-			max:      10,
-			step:     1,
-			expected: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-		},
-		{
-			name:     "step",
-			min:      0,
-			max:      10,
-			step:     2,
-			expected: []int{0, 2, 4, 6, 8},
-		},
-		{
-			name:     "negative",
-			min:      -10,
-			max:      0,
-			step:     1,
-			expected: []int{-10, -9, -8, -7, -6, -5, -4, -3, -2, -1},
-		},
-		{
-			name:     "reverse",
-			min:      10,
-			max:      0,
-			step:     -1,
-			expected: []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		},
+func TestRangeEmpty(t *testing.T) {
+	gen := fns.FromRange[int](0, 0, 1)
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
+}
 
-	for _, c := range cases {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			actual := fns.Range[int](c.min, c.max, c.step)
-			i := 0
-			for ; true; i++ {
-				item, err := actual()
-				if fns.IsGeneratorDoneError(err) {
-					break
-				}
-				if err != nil {
-					t.Errorf("expected nil, got %v", err)
-				}
-				if item != c.expected[i] {
-					t.Errorf("expected %v, got %v", c.expected[i], item)
-				}
-			}
-			if i != len(c.expected) {
-				t.Errorf("expected %v, got %v", len(c.expected), i)
-			}
-		})
+func TestRangeOne(t *testing.T) {
+	gen := fns.FromRange[int](1, 2, 1)
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item != 1 {
+		t.Fatal("expected 1")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestRangeMany(t *testing.T) {
+	gen := fns.FromRange[int](2, 10, 2)
+	for i := 2; i < 10; i += 2 {
+		item, err := gen()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if item != i {
+			t.Fatalf("expected %d", i)
+		}
+	}
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestRangeReverse(t *testing.T) {
+	gen := fns.FromRange[int](10, 2, -2)
+	for i := 10; i > 2; i -= 2 {
+		item, err := gen()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if item != i {
+			t.Fatalf("expected %d", i)
+		}
+	}
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }

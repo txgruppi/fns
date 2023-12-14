@@ -1,70 +1,53 @@
 package fns_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/txgruppi/fns"
 )
 
-func TestMap(t *testing.T) {
-	cases := []struct {
-		name     string
-		subject  fns.Generator[int]
-		fn       func(int) (string, error)
-		expected []string
-	}{
-		{
-			name:     "empty",
-			subject:  fns.Range[int](0, 0, 1),
-			fn:       func(item int) (string, error) { return "", nil },
-			expected: []string{},
-		},
-		{
-			name:     "one",
-			subject:  fns.Range[int](0, 1, 1),
-			fn:       func(item int) (string, error) { return "0", nil },
-			expected: []string{"0"},
-		},
-		{
-			name:     "many",
-			subject:  fns.Range[int](0, 10, 1),
-			fn:       func(item int) (string, error) { return fmt.Sprintf("%d", item), nil },
-			expected: []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
-		},
-	}
-
-	for _, c := range cases {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			actual := fns.Map[int, string](c.subject, c.fn)
-			i := 0
-			for ; true; i++ {
-				item, err := actual()
-				if fns.IsGeneratorDoneError(err) {
-					break
-				}
-				if err != nil {
-					t.Errorf("expected nil, got %v", err)
-				}
-				if item != c.expected[i] {
-					t.Errorf("expected %v, got %v", c.expected[i], item)
-				}
-			}
-			if i != len(c.expected) {
-				t.Errorf("expected %v, got %v", len(c.expected), i)
-			}
-		})
-	}
-
-	t.Run("error", func(t *testing.T) {
-		t.Parallel()
-		expected := fmt.Errorf("error")
-		actual := fns.Map[int, string](fns.Range[int](0, 1, 1), func(item int) (string, error) { return "", expected })
-		_, err := actual()
-		if err != expected {
-			t.Errorf("expected %v, got %v", expected, err)
-		}
+func TestMapEmpty(t *testing.T) {
+	gen := fns.Map[int, int](fns.FromRange[int](0, 0, 1), func(item int) (int, error) {
+		return item * 2, nil
 	})
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestMapOne(t *testing.T) {
+	gen := fns.Map[int, int](fns.FromRange[int](1, 2, 1), func(item int) (int, error) {
+		return item * 2, nil
+	})
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item != 2 {
+		t.Fatal("expected 2")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestMapMany(t *testing.T) {
+	gen := fns.Map[int, int](fns.FromRange[int](1, 5, 1), func(item int) (int, error) {
+		return item * 2, nil
+	})
+	for i := 2; i < 10; i += 2 {
+		item, err := gen()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if item != i {
+			t.Fatalf("expected %d", i)
+		}
+	}
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
 }

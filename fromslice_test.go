@@ -6,47 +6,42 @@ import (
 	"github.com/txgruppi/fns"
 )
 
-func TestFromSlice(t *testing.T) {
-	cases := []struct {
-		name     string
-		subject  []int
-		expected []int
-	}{
-		{
-			name:     "empty",
-			subject:  []int{},
-			expected: []int{},
-		},
-		{
-			name:     "one",
-			subject:  []int{0},
-			expected: []int{0},
-		},
-		{
-			name:     "many",
-			subject:  []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-			expected: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-		},
+func TestFromSliceEmpty(t *testing.T) {
+	gen := fns.FromSlice[int]([]int{})
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
+}
 
-	for _, c := range cases {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			actual := fns.FromSlice[int](c.subject)
-			i := 0
-			for ; true; i++ {
-				item, err := actual()
-				if fns.IsGeneratorDoneError(err) {
-					break
-				}
-				if item != c.expected[i] {
-					t.Errorf("expected %v, got %v", c.expected[i], item)
-				}
-			}
-			if i != len(c.expected) {
-				t.Errorf("expected %v, got %v", len(c.expected), i)
-			}
-		})
+func TestFromSliceOne(t *testing.T) {
+	gen := fns.FromSlice[int]([]int{1})
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item != 1 {
+		t.Fatal("expected 1")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestFromSliceMany(t *testing.T) {
+	gen := fns.FromSlice[int]([]int{1, 2, 3})
+	for i := 1; i <= 3; i++ {
+		item, err := gen()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if item != i {
+			t.Fatalf("expected %d", i)
+		}
+	}
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }

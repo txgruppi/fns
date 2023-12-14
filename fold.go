@@ -1,10 +1,15 @@
 package fns
 
 func Fold[A, B any](gen Generator[A], curr B, fn func(B, A) (B, error)) Generator[B] {
+	done := false
 	return func() (B, error) {
+		if done {
+			return curr, &GeneratorDoneError{}
+		}
 		for {
 			item, err := gen()
 			if IsGeneratorDoneError(err) {
+				done = true
 				return curr, nil
 			}
 			if err != nil {

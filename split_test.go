@@ -1,48 +1,144 @@
 package fns_test
 
 import (
-	"strings"
+	"reflect"
 	"testing"
 
 	"github.com/txgruppi/fns"
 )
 
-func TestSplitStringLines(t *testing.T) {
-	gen := fns.FromReader(strings.NewReader("some\nlines\nof\ntext\n"), 3)
-	toString := fns.Map[[]byte, string](gen, func(item []byte) (string, error) {
-		return string(item), nil
-	})
-	split := fns.SplitLinesString(toString)
-	actual, err := fns.ToSlice[string](split)()
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := []string{"some", "lines", "of", "text"}
-	if len(actual) != len(expected) {
-		t.Fatalf("expected %d items, got %d", len(expected), len(actual))
-	}
-	for i, item := range actual {
-		if item != expected[i] {
-			t.Fatalf("expected %q, got %q", expected[i], item)
-		}
+func TestSplitLinesStringEmpty(t *testing.T) {
+	gen := fns.SplitLinesString(fns.FromSlice[string]([]string{}))
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }
 
-func TestSplitLinesBytes(t *testing.T) {
-	gen := fns.FromReader(strings.NewReader("some\nlines\nof\ntext"), 4)
-	gen = fns.SliceCopy[byte](gen)
-	split := fns.SplitLinesBytes(gen)
-	actual, err := fns.ToSlice[[]byte](split)()
+func TestSplitLinesStringOneNoLineBreakAtEnd(t *testing.T) {
+	gen := fns.SplitLinesString(fns.FromSlice[string]([]string{"some"}))
+	item, err := gen()
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := [][]byte{[]byte("some"), []byte("lines"), []byte("of"), []byte("text")}
-	if len(actual) != len(expected) {
-		t.Fatalf("expected %d items, got %d", len(expected), len(actual))
+	if item != "some" {
+		t.Fatal("expected hello")
 	}
-	for i, item := range actual {
-		if string(item) != string(expected[i]) {
-			t.Fatalf("expected %q, got %q", expected[i], item)
-		}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesStringOneLineBreakAtEnd(t *testing.T) {
+	gen := fns.SplitLinesString(fns.FromSlice[string]([]string{"some\n"}))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item != "some" {
+		t.Fatal("expected hello")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesStringManyNoLineBreakAtEnd(t *testing.T) {
+	gen := fns.ToSlice(fns.SplitLinesString(fns.FromSlice[string]([]string{"som", "e\nlin", "es\n", "of", "\ntext"})))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []string{"some", "lines", "of", "text"}) {
+		t.Fatal("expected [some lines of text]")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesStringManyLineBreakAtEnd(t *testing.T) {
+	gen := fns.ToSlice(fns.SplitLinesString(fns.FromSlice[string]([]string{"som", "e\nlin", "es\n\n", "of", "\ntext\n\n"})))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []string{"some", "lines", "", "of", "text", ""}) {
+		t.Fatal("expected [some lines of text]")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesBytesEmpty(t *testing.T) {
+	gen := fns.SplitLinesBytes(fns.FromSlice[[]byte]([][]byte{}))
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesBytesOneNoLineBreakAtEnd(t *testing.T) {
+	gen := fns.SplitLinesBytes(fns.FromSlice[[]byte]([][]byte{[]byte("some")}))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []byte("some")) {
+		t.Fatal("expected hello")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesBytesOneLineBreakAtEnd(t *testing.T) {
+	gen := fns.SplitLinesBytes(fns.FromSlice[[]byte]([][]byte{[]byte("some\n")}))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []byte("some")) {
+		t.Fatal("expected hello")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesBytesManyNoLineBreakAtEnd(t *testing.T) {
+	gen := fns.ToSlice(fns.SplitLinesBytes(fns.FromSlice[[]byte]([][]byte{[]byte("som"), []byte("e\nlin"), []byte("es\n"), []byte("of"), []byte("\ntext")})))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, [][]byte{[]byte("some"), []byte("lines"), []byte("of"), []byte("text")}) {
+		t.Fatal("expected [some lines of text]")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSplitLinesBytesManyLineBreakAtEnd(t *testing.T) {
+	gen := fns.ToSlice(fns.SplitLinesBytes(fns.FromSlice[[]byte]([][]byte{[]byte("som"), []byte("e\nlin"), []byte("es\n\n"), []byte("of"), []byte("\ntext\n\n")})))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, [][]byte{[]byte("some"), []byte("lines"), []byte(""), []byte("of"), []byte("text"), []byte("")}) {
+		t.Fatal("expected [some lines of text]")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }

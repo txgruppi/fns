@@ -1,22 +1,53 @@
 package fns_test
 
 import (
-	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/txgruppi/fns"
 )
 
-func TestSliceCopy(t *testing.T) {
-	buf := bytes.NewBufferString("hello world")
-	gen := fns.FromReader(buf, 3)
-	gen = fns.SliceCopy(gen)
-	actual, err := fns.ToSlice[[]byte](gen)()
+func TestSliceCopyEmpty(t *testing.T) {
+	gen := fns.SliceCopy[int](fns.FromSlice[[]int]([][]int{}))
+	_, err := gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSliceCopyOne(t *testing.T) {
+	gen := fns.SliceCopy[int](fns.FromSlice[[]int]([][]int{{1}}))
+	item, err := gen()
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := [][]byte{[]byte("hel"), []byte("lo "), []byte("wor"), []byte("ld")}
-	if len(actual) != len(expected) {
-		t.Fatalf("expected %d items, got %d", len(expected), len(actual))
+	if item[0] != 1 {
+		t.Fatal("expected 1")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestSliceCopyMany(t *testing.T) {
+	gen := fns.SliceCopy[int](fns.FromSlice[[]int]([][]int{{1, 2, 3}, {4, 5, 6}}))
+	item, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []int{1, 2, 3}) {
+		t.Fatal("expected [1 2 3]")
+	}
+	item, err = gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(item, []int{4, 5, 6}) {
+		t.Fatal("expected [4 5 6]")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }

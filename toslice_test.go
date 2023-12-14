@@ -1,46 +1,60 @@
 package fns_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/txgruppi/fns"
 )
 
-func TestToSlice(t *testing.T) {
-	cases := []struct {
-		name     string
-		subject  fns.Generator[int]
-		expected []int
-	}{
-		{
-			name:     "empty",
-			subject:  fns.Range[int](0, 0, 1),
-			expected: []int{},
-		},
-		{
-			name:     "one",
-			subject:  fns.Range[int](0, 1, 1),
-			expected: []int{0},
-		},
-		{
-			name:     "many",
-			subject:  fns.Range[int](0, 10, 1),
-			expected: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-		},
+func TestToSliceEmpty(t *testing.T) {
+	gen := fns.ToSlice[int](fns.FromRange[int](0, 0, 1))
+	slice, err := gen()
+	if err != nil {
+		t.Fatal(err)
 	}
+	if len(slice) != 0 {
+		t.Fatal("expected empty slice")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
 
-	for _, c := range cases {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			actual, err := fns.ToSlice[int](c.subject)()
-			if err != nil {
-				t.Errorf("expected nil, got %v", err)
-			}
-			if !reflect.DeepEqual(actual, c.expected) {
-				t.Errorf("expected %v, got %v", c.expected, actual)
-			}
-		})
+func TestToSliceOne(t *testing.T) {
+	gen := fns.ToSlice[int](fns.FromRange[int](1, 2, 1))
+	slice, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(slice) != 1 {
+		t.Fatal("expected slice with one item")
+	}
+	if slice[0] != 1 {
+		t.Fatal("expected 1")
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
+	}
+}
+
+func TestToSliceMany(t *testing.T) {
+	gen := fns.ToSlice[int](fns.FromRange[int](1, 5, 1))
+	slice, err := gen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(slice) != 4 {
+		t.Fatal("expected slice with four items")
+	}
+	for i := 1; i < 5; i++ {
+		if slice[i-1] != i {
+			t.Fatalf("expected %d", i)
+		}
+	}
+	_, err = gen()
+	if !fns.IsGeneratorDoneError(err) {
+		t.Fatal("expected GeneratorDoneError")
 	}
 }
