@@ -6,29 +6,44 @@ A set of Go functions to work with lazy sequences with no reflection and no goro
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/txgruppi/fns"
 )
 
+type indexedLine struct {
+	l string
+	i int
+}
+
 func run() error {
-	numbers := fns.Range[int](0, 1000, 1)
+	reader := strings.NewReader("some\nlines\nof\ntext\n")
 
-	odds := fns.Filter[int](func(item int) (bool, error) {
-		return item%2 == 1, nil
-	}, numbers)
-
-	ten := fns.Take[int](10, odds)
-
-	product := fns.Fold[int, int](1, func(acc int, item int) (int, error) {
-		return acc * item, nil
-	}, ten)
-
-	result, err := product()
+	readerGen := fns.FromReader(reader, 16)
+	stringGen := fns.Map[[]byte, string](readerGen, func(b []byte) (string, error) {
+		return string(b), nil
+	})
+	stringGen = fns.SplitLinesString(stringGen)
+	stringGen = fns.Filter[string](stringGen, func(s string) (bool, error) {
+		return len(s) > 0, nil
+	})
+	linesWithIndex := fns.Fold[string, []indexedLine](stringGen, []indexedLine{}, func(vs []indexedLine, v string) ([]indexedLine, error) {
+		vs = append(vs, indexedLine{l: v, i: len(vs)})
+		return vs, nil
+	})
+	lineWithIndex := fns.Flatten[indexedLine](linesWithIndex)
+	lineWithIndex = fns.Filter[indexedLine](lineWithIndex, func(s indexedLine) (bool, error) {
+		return s.i%2 == 0, nil
+	})
+	stringGen = fns.Map[indexedLine, string](lineWithIndex, func(s indexedLine) (string, error) {
+		return s.l, nil
+	})
+	stringSlice, err := fns.ToSlice[string](stringGen)()
 	if err != nil {
 		return err
 	}
-
-	println(result) // 654729075
-
+	fmt.Printf("%v\n", stringSlice) // [some of]
 	return nil
 }
 
@@ -37,4 +52,5 @@ func main() {
 		panic(err)
 	}
 }
+
 ```
