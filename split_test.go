@@ -8,10 +8,10 @@ import (
 )
 
 func TestSplitStringLines(t *testing.T) {
-	gen := fns.FromReader(3, strings.NewReader("some\nlines\nof\ntext\n"))
-	toString := fns.Map[[]byte, string](func(item []byte) (string, error) {
+	gen := fns.FromReader(strings.NewReader("some\nlines\nof\ntext\n"), 3)
+	toString := fns.Map[[]byte, string](gen, func(item []byte) (string, error) {
 		return string(item), nil
-	}, gen)
+	})
 	split := fns.SplitLinesString(toString)
 	actual, err := fns.ToSlice[string](split)()
 	if err != nil {
@@ -29,7 +29,7 @@ func TestSplitStringLines(t *testing.T) {
 }
 
 func TestSplitLinesBytes(t *testing.T) {
-	gen := fns.FromReader(4, strings.NewReader("some\nlines\nof\ntext"))
+	gen := fns.FromReader(strings.NewReader("some\nlines\nof\ntext"), 4)
 	gen = fns.SliceCopy[byte](gen)
 	split := fns.SplitLinesBytes(gen)
 	actual, err := fns.ToSlice[[]byte](split)()

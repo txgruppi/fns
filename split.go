@@ -16,7 +16,7 @@ func IsRequestNextError(err error) bool {
 	return ok
 }
 
-func Split[T any](fn func(prev []T, done bool) (rest []T, result T, err error), gen Generator[T]) Generator[T] {
+func Split[T any](gen Generator[T], fn func(prev []T, done bool) (rest []T, result T, err error)) Generator[T] {
 	chunks := []T{}
 	done := false
 	return func() (result T, err error) {
@@ -45,16 +45,16 @@ func Split[T any](fn func(prev []T, done bool) (rest []T, result T, err error), 
 }
 
 func SeparatorSplitter[T any](
+	gen Generator[T],
 	contains func(T) bool,
 	index func(T) int,
 	cut func(T, int) (T, T),
 	builder func(T),
 	build func() T,
 	empty func(T) bool,
-	gen Generator[T],
 ) Generator[T] {
 	var zero T
-	return Split[T](func(prev []T, generatorDone bool) ([]T, T, error) {
+	return Split[T](gen, func(prev []T, generatorDone bool) ([]T, T, error) {
 		lineBreak := -1
 		for i, chunk := range prev {
 			if contains(chunk) {
@@ -91,25 +91,26 @@ func SeparatorSplitter[T any](
 			return nil, zero, &GeneratorDoneError{}
 		}
 		return nil, result, nil
-	}, gen)
+	})
 }
 
 func SplitLinesString(gen Generator[string]) Generator[string] {
 	var builder strings.Builder
 	return SeparatorSplitter[string](
+		gen,
 		func(v string) bool { return strings.Contains(v, "\n") },
 		func(v string) int { return strings.Index(v, "\n") },
 		func(v string, idx int) (string, string) { return v[:idx], v[idx+1:] },
 		func(v string) { builder.WriteString(v) },
 		func() string { result := builder.String(); builder.Reset(); return result },
 		func(v string) bool { return v == "" },
-		gen,
 	)
 }
 
 func SplitLinesBytes(gen Generator[[]byte]) Generator[[]byte] {
 	var buf bytes.Buffer
 	return SeparatorSplitter[[]byte](
+		gen,
 		func(v []byte) bool { return bytes.Contains(v, []byte("\n")) },
 		func(v []byte) int { return bytes.Index(v, []byte("\n")) },
 		func(v []byte, idx int) ([]byte, []byte) { return v[:idx], v[idx+1:] },
@@ -121,6 +122,5 @@ func SplitLinesBytes(gen Generator[[]byte]) Generator[[]byte] {
 			return cp
 		},
 		func(v []byte) bool { return len(v) == 0 },
-		gen,
 	)
 }

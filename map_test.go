@@ -38,7 +38,7 @@ func TestMap(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual := fns.Map[int, string](c.fn, c.subject)
+			actual := fns.Map[int, string](c.subject, c.fn)
 			i := 0
 			for ; true; i++ {
 				item, err := actual()
@@ -61,7 +61,7 @@ func TestMap(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		t.Parallel()
 		expected := fmt.Errorf("error")
-		actual := fns.Map[int, string](func(item int) (string, error) { return "", expected }, fns.Range[int](0, 1, 1))
+		actual := fns.Map[int, string](fns.Range[int](0, 1, 1), func(item int) (string, error) { return "", expected })
 		_, err := actual()
 		if err != expected {
 			t.Errorf("expected %v, got %v", expected, err)

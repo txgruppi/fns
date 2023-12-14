@@ -52,7 +52,7 @@ func TestFilter(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual := fns.Filter(c.fn, c.subject)
+			actual := fns.Filter(c.subject, c.fn)
 			i := 0
 			for ; true; i++ {
 				item, err := actual()
@@ -75,7 +75,7 @@ func TestFilter(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		t.Parallel()
 		expected := fmt.Errorf("error")
-		actual := fns.Filter[int](func(item int) (bool, error) { return false, expected }, fns.Range[int](0, 1, 1))
+		actual := fns.Filter[int](fns.Range[int](0, 1, 1), func(item int) (bool, error) { return false, expected })
 		_, err := actual()
 		if err != expected {
 			t.Errorf("expected %v, got %v", expected, err)

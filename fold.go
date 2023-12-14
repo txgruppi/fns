@@ -1,6 +1,6 @@
 package fns
 
-func Fold[A, B any](curr B, fn func(B, A) (B, error), gen Generator[A]) Generator[B] {
+func Fold[A, B any](gen Generator[A], curr B, fn func(B, A) (B, error)) Generator[B] {
 	return func() (B, error) {
 		for {
 			item, err := gen()

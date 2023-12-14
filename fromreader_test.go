@@ -44,7 +44,7 @@ func TestFromReader(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual := fns.FromReader(c.bufferSize, c.r)
+			actual := fns.FromReader(c.r, c.bufferSize)
 			i := 0
 			for ; true; i++ {
 				item, err := actual()

@@ -48,7 +48,7 @@ func TestFold(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual := fns.Fold[int, int](c.init, c.fn, c.subject)
+			actual := fns.Fold[int, int](c.subject, c.init, c.fn)
 			item, err := actual()
 			if err != nil {
 				t.Errorf("expected nil, got %v", err)
@@ -62,7 +62,7 @@ func TestFold(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		t.Parallel()
 		expected := fmt.Errorf("error")
-		actual := fns.Fold[int, int](0, func(acc int, item int) (int, error) { return 0, expected }, fns.Range[int](0, 1, 1))
+		actual := fns.Fold[int, int](fns.Range[int](0, 1, 1), 0, func(acc int, item int) (int, error) { return 0, expected })
 		_, err := actual()
 		if err != expected {
 			t.Errorf("expected %v, got %v", expected, err)

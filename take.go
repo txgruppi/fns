@@ -1,6 +1,6 @@
 package fns
 
-func Take[T any](n int, gen Generator[T]) Generator[T] {
+func Take[T any](gen Generator[T], n int) Generator[T] {
 	var zero T
 	return func() (T, error) {
 		if n <= 0 {

@@ -58,7 +58,7 @@ func TestTake(t *testing.T) {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			actual := fns.Take[int](c.n, c.subject)
+			actual := fns.Take[int](c.subject, c.n)
 			i := 0
 			for ; true; i++ {
 				item, err := actual()

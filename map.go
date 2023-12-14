@@ -1,6 +1,6 @@
 package fns
 
-func Map[A, B any](fn func(A) (B, error), gen Generator[A]) Generator[B] {
+func Map[A, B any](gen Generator[A], fn func(A) (B, error)) Generator[B] {
 	var zero B
 	return func() (B, error) {
 		item, err := gen()

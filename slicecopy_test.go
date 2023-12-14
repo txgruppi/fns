@@ -9,7 +9,7 @@ import (
 
 func TestSliceCopy(t *testing.T) {
 	buf := bytes.NewBufferString("hello world")
-	gen := fns.FromReader(3, buf)
+	gen := fns.FromReader(buf, 3)
 	gen = fns.SliceCopy(gen)
 	actual, err := fns.ToSlice[[]byte](gen)()
 	if err != nil {

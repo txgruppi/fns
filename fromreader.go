@@ -2,7 +2,7 @@ package fns
 
 import "io"
 
-func FromReader(bufferSize int, r io.Reader) Generator[[]byte] {
+func FromReader(r io.Reader, bufferSize int) Generator[[]byte] {
 	buf := make([]byte, bufferSize)
 	return func() ([]byte, error) {
 		n, err := r.Read(buf)
